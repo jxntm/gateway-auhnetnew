@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+========================================================================
+Copyright (c) 1999 - 2012 Jenzabar, Inc. All Rights Reserved
+========================================================================
+This build file specifies how to build the ScholarChip module using ant.
+========================================================================
+-->
+
+<project name="JenzabarDevelopmentBuild" default="jar" basedir="./.." xmlns:artifact="antlib:org.apache.maven.artifact.ant">
+
+  <taskdef resource="net/sf/antcontrib/antcontrib.properties"/>
+
+  <import file="build-properties.xml"/>
+  <import file="standard-release-include.xml"/>
+  
+  <artifact:pom id="pom" file="script/pom.xml"/>
+  <artifact:dependencies pathId="authorize.net.dependencies" pomRefId="pom" scopes="provided, compile, runtime" filesetId="authorize.net.dependency.fileset" versionsId="authorize.net.dependency.versions"/>
+  
+  <path id="javac.classpath">
+    <path refid="authorize.net.dependencies"/>
+    <pathelement location="${build.classes.src.dir}"/>
+  </path>
+
+  <target name="set.release.target">
+    <property name="target-repo-url" value="${release-repo-url}"/>
+    <property name="pom.build.version" value="${build.version}"/>
+  </target>
+  
+  <target name="set.snapshot.target">
+    <property name="target-repo-url" value="${snapshot-repo-url}" />
+    <property name="pom.build.version" value="${build.version}-SNAPSHOT"/>
+  </target>
+  
+  <target name="snapshot" depends="set.snapshot.target, snapshot.jx-authorizenet"/>
+  <target name="release" depends="set.release.target, release.jx-authorizenet"/>
+    
+  <target name="release.jx-authorizenet" depends="clean, jar,attachments">
+    <antcall target="release.artifact">
+      <param name="artifact.location" value="${build.lib.dir}"/>
+      <param name="artifact.name" value="jx-authorizenet.jar"/>
+      <param name="artifact.sources.name" value="jx-authorizenet-sources.jar"/>
+      <param name="artifact.javadoc.name" value="jx-authorizenet-javadocs.jar"/>
+      <param name="pom.ref.id" value="pom"/>
+      <param name="repo-id" value="${repo-id}"/>
+      <param name="repo-url" value="${target-repo-url}"/>
+    </antcall>
+  </target>
+
+  <target name="snapshot.jx-authorizenet" depends="clean, jar">
+    <antcall target="release.artifact">
+      <param name="artifact.location" value="${build.lib.dir}"/>
+      <param name="artifact.name" value="jx-authorizenet.jar"/>
+      <param name="pom.ref.id" value="pom"/>
+      <param name="repo-id" value="${repo-id}"/>
+      <param name="repo-url" value="${target-repo-url}"/>
+    </antcall>
+  </target>
+
+  <target name="attachments" depends="sources, javadocs"/>
+  
+  <!-- package sources -->
+  <target name="sources">
+    <antcall target="build.sources">
+      <param name="artifact.location" value="${build.lib.dir}"/>
+      <param name="artifact.sources.name" value="jx-authorizenet-sources.jar"/>
+      <param name="src.dir" value="${src.dir}"/>
+    </antcall>
+  </target>
+  
+  <!-- Create framework javadoc -->
+  <target name="javadocs">
+    <antcall target="build.javadocs">
+      <param name="artifact.location" value="${build.lib.dir}"/>
+      <param name="artifact.javadoc.name" value="jx-authorizenet-javadocs.jar"/>
+      <param name="javac.classpath" value="javac.classpath"/>
+      <param name="build.doc.dir" value="${build.doc.dir}"/>
+      <param name="title" value="Higher Reach Data API"/>
+      <param name="pom.version" value="${pom.build.version}"/>
+      <param name="src.dir" value="${src.dir}"/>
+    </antcall>
+  </target>  
+
+  <!--
+  Create the deploy directory tree
+  -->
+  <target name="prepare">
+    <mkdir dir="${build.dir}"/>
+    <mkdir dir="${build.lib.dir}"/>
+    <mkdir dir="${build.classes.src.dir}"/>
+  </target>
+  
+  <!--
+  Delete the build directory tree
+  -->
+  <target name="clean">
+    <delete dir="${build.dir}"/>
+  </target>
+			
+  <target name="compile" depends="prepare">
+    <javac source="${build.source}" debug="on" debuglevel="${build.debuglevel}"
+      srcdir="${src.dir}" destdir="${build.classes.src.dir}" classpathref="javac.classpath" includes="com/**/**/**.java"/>
+  </target>
+		
+  <!--
+  Building authorizenet.jar 
+  -->
+  <target name="jar" depends="compile">
+  	<tstamp/>
+    <jar destfile="${build.lib.dir}/jx-authorizenet.jar">
+      <manifest>
+        <section name="authorizenet">
+          <attribute name="Implementation-Title" value="jxntm authorizenet module"/>
+          <attribute name="Implementation-Version" value="${build.version}.${DSTAMP}"/> 
+          <attribute name="Implementation-Vendor" value="Jenzabar Inc."/>
+        </section>
+      </manifest>     	
+      <fileset dir="${build.classes.src.dir}">
+        <include name="com/**/**/**.class"/>
+      </fileset>
+    </jar>
+  </target>
+	
+</project>

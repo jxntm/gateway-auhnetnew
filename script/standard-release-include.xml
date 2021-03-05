@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project  default="release.artifact" name="artifact-build" xmlns:artifact="antlib:org.apache.maven.artifact.ant">
+<taskdef resource="net/sf/antcontrib/antlib.xml" />  
+  
+  <target name="release.artifact">
+    <condition property="artifact.sources.name" value="[default]">
+      <not>
+        <isset property="artifact.sources.name"/>
+      </not>
+    </condition>
+    
+    <condition property="artifact.javadoc.name" value="[default]">
+      <not>
+        <isset property="artifact.javadoc.name"/>
+      </not>
+    </condition>
+    
+    <if>
+      <and>
+	<equals arg1="${artifact.sources.name}" arg2="[default]" />
+	<equals arg1="${artifact.javadoc.name}" arg2="[default]" />
+      </and>
+      <then>
+	<artifact:deploy file="${artifact.location}/${artifact.name}">
+	  <artifact:pom refid="${pom.ref.id}"/>
+	  <remoteRepository id="${repo-id}" url="${repo-url}" />
+	</artifact:deploy>
+      </then>
+      <elseif>
+	<equals arg1="${artifact.sources.name}" arg2="[default]" />
+	<then>
+	  <artifact:deploy file="${artifact.location}/${artifact.name}">
+	    <artifact:pom refid="${pom.ref.id}"/>
+	    <remoteRepository id="${repo-id}" url="${repo-url}" />
+	    <attach file="${artifact.location}/${artifact.javadoc.name}" type="jar" classifier="javadoc"/>
+	  </artifact:deploy>
+	</then>      
+      </elseif>
+      <elseif>
+	<equals arg1="${artifact.javadoc.name}" arg2="[default]" />
+	<then>
+	  <artifact:deploy file="${artifact.location}/${artifact.name}">
+	    <artifact:pom refid="${pom.ref.id}"/>
+	    <remoteRepository id="${repo-id}" url="${repo-url}" />
+	    <attach file="${artifact.location}/${artifact.sources.name}" type="jar" classifier="sources"/>
+	  </artifact:deploy>
+	</then>      
+      </elseif>
+      <else>
+	<artifact:deploy file="${artifact.location}/${artifact.name}">
+	  <artifact:pom refid="${pom.ref.id}"/>
+	  <remoteRepository id="${repo-id}" url="${repo-url}" />
+	  <attach file="${artifact.location}/${artifact.javadoc.name}" type="jar" classifier="javadoc"/>
+	  <attach file="${artifact.location}/${artifact.sources.name}" type="jar" classifier="sources"/>
+	</artifact:deploy>
+      </else>
+    </if>
+  </target> 
+  
+  <!-- Create javadoc -->
+  <target name="build.javadocs">
+    <delete dir="${build.doc.dir}"/>
+    <mkdir dir="${build.doc.dir}"/>
+    <javadoc
+       destdir="${build.doc.dir}"
+       author="true" version="true" use="true"
+       windowtitle="${title} -- v${pom.version}"
+       doctitle="${title} -- v${pom.version}"
+       classpathref="${javac.classpath}">
+      <packageset dir="${src.dir}" defaultexcludes="yes">
+        <include name="net/jenzabar/**"/>
+        <include name="com/jenzabar/**"/>
+      </packageset>
+    </javadoc>
+    <jar destfile="${artifact.location}/${artifact.javadoc.name}">
+      <fileset dir="${build.doc.dir}">
+        <include name="**/**"/>
+      </fileset>
+    </jar>   
+  </target>
+  
+  <!-- build source code -->
+  <target name="build.sources">
+    <jar destfile="${artifact.location}/${artifact.sources.name}">
+      <fileset dir="${src.dir}">
+        <include name="**/*.java"/>
+      </fileset>
+    </jar>   
+  </target>
+</project>
